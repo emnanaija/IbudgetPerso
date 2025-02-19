@@ -1,0 +1,193 @@
+package com.example.ibudgetproject.Services;
+
+
+import com.example.ibudgetproject.Entity.Depense;
+import com.example.ibudgetproject.Entity.EtatDepense;
+import com.example.ibudgetproject.Entity.ExpenseCategory;
+import com.example.ibudgetproject.Entity.SpendingWallet;
+import com.example.ibudgetproject.Repository.DepenseRepository;
+import com.example.ibudgetproject.Repository.ExpenseCategoryRepository;
+import com.example.ibudgetproject.Repository.SpendingWalletRepository;
+import jdk.jfr.Category;
+import net.sourceforge.tess4j.ITesseract;
+import net.sourceforge.tess4j.Tesseract;
+import net.sourceforge.tess4j.TesseractException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.io.File;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+@Service
+public class DepenseService {
+
+    @Autowired
+    private DepenseRepository depenseRepository;
+    @Autowired
+    private ExpenseCategoryRepository categoryRepository;
+    @Autowired
+    private SpendingWalletRepository walletRepository;
+
+    // ✅ Créer une dépense manuelle
+
+    public Depense createDepenseManuelle(Depense depense) {
+        // Vérification de la catégorie, si elle est nulle, on la définit par défaut sur "other"
+        if (depense.getCategory() == null) {
+            // Recherche de la catégorie "other" dans la base de données
+            ExpenseCategory defaultCategory = categoryRepository.findByNom("other")
+                    .orElseThrow(() -> new RuntimeException("Catégorie 'other' non trouvée !"));
+            depense.setCategory(defaultCategory);
+        }
+        if (depense.getDate() == null) {
+            depense.setDate(LocalDate.now()); // Utilise la date actuelle
+        }
+
+        depense.setPhotoUrl(null);
+        // Mettre à jour le montant de la catégorie avec la nouvelle dépense
+        ExpenseCategory category = depense.getCategory();
+        category.setMontantDepensé(category.getMontantDepensé() + depense.getMontant());
+
+        // Sauvegarder la catégorie mise à jour
+        categoryRepository.save(category);
+
+
+        // Enregistrer la dépense dans la base de données
+        return depenseRepository.save(depense);
+    }
+
+
+//ajout par ticket
+
+
+
+
+
+    // ✅ Mettre à jour une dépense
+    public Depense updateDepense(Long id, Depense depenseDetails) {
+        Optional<Depense> existingDepense = depenseRepository.findById(id);
+        if (existingDepense.isPresent()) {
+            Depense depense = existingDepense.get();
+            depense.setMontant(depenseDetails.getMontant());
+            depense.setDate(depenseDetails.getDate());
+            depense.setEtat(depenseDetails.getEtat());
+            depense.setWallet(depenseDetails.getWallet());
+            depense.setCategory(depenseDetails.getCategory());
+            return depenseRepository.save(depense);
+        } else {
+            throw new RuntimeException("Dépense non trouvée !");
+        }
+    }
+
+    // ✅ Supprimer une dépense
+    public void deleteDepense(Long id) {
+        if (!depenseRepository.existsById(id)) {
+            throw new RuntimeException("Dépense non trouvée !");
+        }
+        depenseRepository.deleteById(id);
+    }
+
+    // ✅ Afficher toutes les dépenses
+    public List<Depense> getAllDepenses() {
+        return depenseRepository.findAll();
+    }
+
+
+    // ✅ Afficher une dépense par ID
+    public Depense getDepenseById(Long id) {
+        return depenseRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Dépense non trouvée !"));
+    }
+    public List<Depense> getDepensesByWalletId(Long walletId) {
+        return depenseRepository.findByWalletId(walletId);
+    }
+
+
+
+    /**
+     * 🔍 Convertit une image en texte avec Tesseract
+     */
+    public String extractTextFromImage(File imageFile) {
+        ITesseract tesseract = new Tesseract();
+        tesseract.setDatapath("C:\\Program Files\\Tesseract-OCR\\tessdata");
+        tesseract.setLanguage("eng"); // Français
+
+        try {
+            return tesseract.doOCR(imageFile);
+        } catch (TesseractException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * 🔢 Extrait le montant total du texte
+     */
+    public String extractTotalAmount(String extractedText) {
+        Pattern pattern = Pattern.compile("Total\\s+([\\d.,]+)\\s*DT", Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(extractedText);
+
+        if (matcher.find()) {
+            return matcher.group(1).replace(",", "."); // Convertit 41,500 en 41.500
+        }
+        return null;
+    }
+
+    /**
+     * 📅 Extrait la date du texte
+     */
+    public String extractDate(String extractedText) {
+        Pattern pattern = Pattern.compile("(\\d{2}/\\d{2}/\\d{4})");
+        Matcher matcher = pattern.matcher(extractedText);
+
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return null;
+    }
+
+    /**
+     * 📥 Extrait les informations depuis une image et les stocke en base
+     */
+    public Depense saveDepenseFromImage(File imageFile, String imageUrl) {
+        String extractedText = extractTextFromImage(imageFile);
+        System.out.println("Texte extrait : " + extractedText);
+
+        if (extractedText == null) {
+            throw new RuntimeException("Impossible d'extraire du texte de l'image.");
+        }
+
+        String totalAmount = extractTotalAmount(extractedText);
+        String dateString = extractDate(extractedText);
+
+        if (totalAmount == null) {
+            throw new RuntimeException("Montant total non trouvé.");
+        }
+
+        // Convertir la date ou utiliser la date du jour
+        LocalDate date = (dateString != null) ? LocalDate.parse(dateString, DateTimeFormatter.ofPattern("dd/MM/yyyy")) : LocalDate.now();
+
+        // Assigner des valeurs par défaut
+        SpendingWallet defaultWallet = walletRepository.findById(1L).orElseThrow(() -> new RuntimeException("Wallet non trouvé"));
+        ExpenseCategory defaultCategory = categoryRepository.findByNom("other") .orElseThrow(() -> new RuntimeException("Catégorie 'other' non trouvée !"));; // Facultatif
+
+        // Création et sauvegarde de la dépense
+        Depense depense = Depense.builder()
+                .date(date)
+                .montant(Double.parseDouble(totalAmount))
+                .etat(EtatDepense.REALISEE)  // Valeur par défaut
+                .wallet(defaultWallet)
+                .category(defaultCategory)
+                .photoUrl(imageUrl)
+                .build();
+
+        return depenseRepository.save(depense);
+    }
+
+
+}
+
