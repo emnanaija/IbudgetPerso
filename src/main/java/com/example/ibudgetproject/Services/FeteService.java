@@ -54,4 +54,10 @@ public class FeteService {
         logger.warn("⚠️ Aucun résultat renvoyé par l'API.");
         return List.of();
     }
+
+
+
+
+
+
 }
