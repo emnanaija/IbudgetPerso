@@ -41,23 +41,32 @@ public class FeteController {
     }*/
     @GetMapping("/{year}/{month}")
     public String getFetes(@PathVariable int year, @PathVariable int month) {
-        List<String> fetes = feteService.getFetesDuMois(year, month);
+        // Récupérer toutes les fêtes du mois suivant
+        List<String> fetes = feteService.getFetesDuMois(year, month );  // Le mois suivant
 
         if (!fetes.isEmpty()) {
-            String fete = fetes.get(0); // Prendre la première fête pour l'exemple
-            // Créer le prompt pour Gemini
-            String budgetPrompt = "proposer moi un budget pour la fete   " + fete +"en dinars tunisien (une estimation a peu pres selon ce que tu connais comme informations pour une famille de 5 personnes) reponds moi avec les montants et la description seulement";
-            String cadeauxPrompt = "Quels sont des cadeaux populaires pour propose moi avec le montant " + fete + "?";
+            StringBuilder recommendations = new StringBuilder(); // Utilisation de StringBuilder pour concaténer les résultats
 
-            // Demander des suggestions à Gemini
-            String budgetSuggestions = geminiService.getSuggestions(budgetPrompt);
-            String cadeauxSuggestions = geminiService.getSuggestions(cadeauxPrompt);
+            for (String fete : fetes) {
+                // Créer les prompts pour Gemini pour chaque fête
+                String budgetPrompt = "Propose-moi un budget pour la fête de " + fete +
+                        " en dinars tunisien (une estimation approximative pour une famille de 5 personnes). Réponds-moi avec les montants et la description seulement.";
+                String cadeauxPrompt = "Quels sont des cadeaux populaires pour " + fete + "? Propose-moi des idées avec les prix.";
 
-            return "Suggestions pour " + fete + " : \n" +
-                    "Budget : " + budgetSuggestions + "\n" +
-                    "Cadeaux : " + cadeauxSuggestions;
+                // Demander des suggestions à Gemini
+                String budgetSuggestions = geminiService.getSuggestions(budgetPrompt);
+                String cadeauxSuggestions = geminiService.getSuggestions(cadeauxPrompt);
+
+                // Ajouter les suggestions à la réponse
+                recommendations.append("Suggestions pour la fête de ").append(fete).append(" :\n")
+                        .append("Budget : ").append(budgetSuggestions).append("\n")
+                        .append("Cadeaux : ").append(cadeauxSuggestions).append("\n\n");
+            }
+
+            return recommendations.toString(); // Retourner toutes les suggestions
         } else {
             return "Aucune fête trouvée pour " + month + "/" + year;
         }
     }
+
 }

@@ -38,23 +38,38 @@ public class DepenseService {
     public Depense createDepenseManuelle(Depense depense) {
         // Vérification de la catégorie, si elle est nulle, on la définit par défaut sur "other"
         if (depense.getCategory() == null) {
-            // Recherche de la catégorie "other" dans la base de données
             ExpenseCategory defaultCategory = categoryRepository.findByNom("other")
                     .orElseThrow(() -> new RuntimeException("Catégorie 'other' non trouvée !"));
             depense.setCategory(defaultCategory);
         }
+
         if (depense.getDate() == null) {
             depense.setDate(LocalDate.now()); // Utilise la date actuelle
         }
 
         depense.setPhotoUrl(null);
-        // Mettre à jour le montant de la catégorie avec la nouvelle dépense
+
+        // Récupérer le wallet lié à la dépense
+        SpendingWallet wallet = depense.getWallet();
+        if (wallet == null) {
+            throw new RuntimeException("Aucun wallet associé à cette dépense !");
+        }
+
+        // Vérifier si le wallet a assez de fonds
+        if (wallet.getSolde() < depense.getMontant()) {
+            throw new RuntimeException("Fonds insuffisants dans le wallet !");
+        }
+
+        // Déduire le montant de la dépense du wallet
+        wallet.setSolde(wallet.getSolde() - depense.getMontant());
+
+        // Mettre à jour le montant dépensé de la catégorie
         ExpenseCategory category = depense.getCategory();
         category.setMontantDepensé(category.getMontantDepensé() + depense.getMontant());
 
-        // Sauvegarder la catégorie mise à jour
+        // Sauvegarder les mises à jour
+        walletRepository.save(wallet);
         categoryRepository.save(category);
-
 
         // Enregistrer la dépense dans la base de données
         return depenseRepository.save(depense);
