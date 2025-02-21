@@ -68,7 +68,7 @@ public class DepenseReccurenteService {
         logger.info("🔄 Job de traitement des dépenses récurrentes exécuté à {}", LocalDateTime.now());
 
       //  LocalDate today = LocalDate.now();
-        LocalDate today = LocalDate.of(2025, 5, 20); // Simule qu'on est en mai 2025
+        LocalDate today = LocalDate.of(2025, 5, 21); // Simule qu'on est en mai 2025
 
         List<DepenseReccurente> depensesRecurrentes = depenseRecurrenteRepository.findAll();
 

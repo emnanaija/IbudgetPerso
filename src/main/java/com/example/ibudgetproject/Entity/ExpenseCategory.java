@@ -34,6 +34,8 @@ public class ExpenseCategory {
         @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
 
         private List<Depense> depenses;
-
+        public double getSoldeRestant() {
+                return budgetAlloué - montantDepensé;
+        }
 
 }

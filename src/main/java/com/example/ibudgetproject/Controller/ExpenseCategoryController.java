@@ -4,9 +4,11 @@ package com.example.ibudgetproject.Controller;
 import com.example.ibudgetproject.Entity.ExpenseCategory;
 import com.example.ibudgetproject.Services.ExpenseCategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/categories")
@@ -44,4 +46,14 @@ public class ExpenseCategoryController {
     public ExpenseCategory getCategoryById(@PathVariable Long id) {
         return categoryService.getCategoryById(id);
     }
+
+
+
+    @GetMapping("/solde-restant")
+    public ResponseEntity<List<Map<String, Object>>> getSoldeRestant() {
+        List<Map<String, Object>> result = categoryService.getSoldeRestantParCategorie();
+        return ResponseEntity.ok(result);
+    }
+
+
 }

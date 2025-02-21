@@ -5,8 +5,7 @@ import com.example.ibudgetproject.Repository.ExpenseCategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class ExpenseCategoryService {
@@ -59,5 +58,24 @@ public class ExpenseCategoryService {
     public ExpenseCategory getCategoryById(Long id) {
         return categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Catégorie non trouvée !"));
+    }
+
+
+
+    public List<Map<String, Object>> getSoldeRestantParCategorie() {
+        List<ExpenseCategory> categories = categoryRepository.findAll();
+        List<Map<String, Object>> resultat = new ArrayList<>();
+
+        for (ExpenseCategory categorie : categories) {
+            Map<String, Object> categorieData = new HashMap<>();
+            categorieData.put("id", categorie.getId());
+            categorieData.put("nom", categorie.getNom());
+            categorieData.put("budget_alloué", categorie.getBudgetAlloué());
+            categorieData.put("montant_dépensé", categorie.getMontantDepensé());
+            categorieData.put("solde_restant", categorie.getSoldeRestant()); // Calcul automatique
+
+            resultat.add(categorieData);
+        }
+        return resultat;
     }
 }
