@@ -1,6 +1,8 @@
 package com.example.ibudgetproject.Entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,9 +32,12 @@ public class Depense {
 
     @ManyToOne
     @JoinColumn(name = "wallet_id", nullable = false) // Une dépense appartient toujours à un Wallet
+    @JsonBackReference
     private SpendingWallet wallet;
 
     @ManyToOne
+    @JsonBackReference
+
     @JoinColumn(name = "category_id", nullable = true) // Une dépense peut être associée à une catégorie (facultatif)
     private ExpenseCategory category;
     @Column(name = "photo_url", nullable = true)

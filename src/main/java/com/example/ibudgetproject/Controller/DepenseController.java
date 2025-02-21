@@ -2,6 +2,7 @@ package com.example.ibudgetproject.Controller;
 
 import com.example.ibudgetproject.Entity.Depense;
 import com.example.ibudgetproject.Services.DepenseService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -9,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -19,6 +21,8 @@ public class DepenseController {
 
     @Autowired
     private DepenseService depenseService;
+
+
 
     // ✅ Créer une dépense
     @PostMapping("/ajoutManuel")
@@ -82,6 +86,12 @@ public class DepenseController {
 
 
         return ResponseEntity.ok("Fichier reçu et dépense enregistrée avec succès : " + file.getOriginalFilename());
+    }
+
+
+    @GetMapping("/wallet/{walletId}/mois/{mois}/annee/{annee}")
+    public List<Depense> getDepensesByWalletAndMonth(@PathVariable Long walletId, @PathVariable int mois, @PathVariable int annee) {
+        return depenseService.getDepensesForMonth(walletId, mois, annee);
     }
 
 

@@ -63,7 +63,7 @@ public class DepenseReccurenteService {
     }
 
 
-    @Scheduled(cron = "0 * * * * ?") // Exécution toutes les minutes
+  //  @Scheduled(cron = "0 * * * * ?") // Exécution toutes les minutes
     public void traiterDepensesRecurrentes() {
         logger.info("🔄 Job de traitement des dépenses récurrentes exécuté à {}", LocalDateTime.now());
 

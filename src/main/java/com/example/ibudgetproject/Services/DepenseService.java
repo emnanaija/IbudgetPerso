@@ -203,6 +203,13 @@ public class DepenseService {
         return depenseRepository.save(depense);
     }
 
+    public List<Depense> getDepensesForMonth(Long walletId, int month, int year) {
+        LocalDate startOfMonth = LocalDate.of(year, month, 1);
+        LocalDate endOfMonth = startOfMonth.withDayOfMonth(startOfMonth.lengthOfMonth());
+
+        // Utiliser la méthode du repository qui inclut déjà le filtrage sur l'état "REALISEE"
+        return depenseRepository.findByWalletIdAndDateBetweenAndEtat(walletId, startOfMonth, endOfMonth, EtatDepense.REALISEE);
+    }
 
 }
 
